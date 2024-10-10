@@ -512,3 +512,44 @@ ExtendedTriangle.prototype.distanceToTriangle = ( function () {
 	};
 
 } )();
+
+// From: https://github.com/libigl/blob/main/include/igl/solid_angle.cpp#L10
+ExtendedTriangle.prototype.solidAngle = ( function () {
+
+	const v0 = new Vector3();
+	const v1 = new Vector3();
+	const v2 = new Vector3();
+	const vl = new Vector3();
+	const dp = new Vector3();
+
+	return function solidAngle( point ) {
+
+		v0.subVectors( this.a, point );
+		v1.subVectors( this.b, point );
+		v2.subVectors( this.c, point );
+
+		vl.set(v0.length(), v1.length(), v2.length());
+
+		// Compute determinant
+		let detf = 
+		  v0.x*v1.y*v2.z+
+		  v1.x*v2.y*v0.z+
+		  v2.x*v0.y*v1.z-
+		  v2.x*v1.y*v0.z-
+		  v1.x*v0.y*v2.z-
+		  v0.x*v2.y*v1.z;
+
+		// Compute pairwise dotproducts
+		dp.set(v1.dot(v2), v2.dot(v0), v0.dot(v1));
+
+		// Compute winding number
+		// Only divide by TWO_PI instead of 4*pi because there was a 2 out front
+		return Math.atan2(detf,
+			vl.x*vl.y*vl.z + 
+			dp.x*vl.x +
+			dp.y*vl.y +
+			dp.z*vl.z) / (2. * Math.PI);
+
+	};
+
+} )();

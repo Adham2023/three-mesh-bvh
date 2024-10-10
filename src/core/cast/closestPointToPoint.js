@@ -19,6 +19,7 @@ export function closestPointToPoint(
 	const maxThresholdSq = maxThreshold * maxThreshold;
 	let closestDistanceSq = Infinity;
 	let closestDistanceTriIndex = null;
+	let solidAngle = 0.0;
 	bvh.shapecast(
 
 		{
@@ -38,6 +39,8 @@ export function closestPointToPoint(
 
 			intersectsTriangle: ( tri, triIndex ) => {
 
+				if( tri.needsUpdate ) { tri.update(); }
+
 				tri.closestPointToPoint( point, temp );
 				const distSq = point.distanceToSquared( temp );
 				if ( distSq < closestDistanceSq ) {
@@ -45,7 +48,9 @@ export function closestPointToPoint(
 					temp1.copy( temp );
 					closestDistanceSq = distSq;
 					closestDistanceTriIndex = triIndex;
-
+					solidAngle = tri.solidAngle( point );
+				} else if ( distSq === closestDistanceSq ) {
+					solidAngle += tri.solidAngle( point );
 				}
 
 				if ( distSq < minThresholdSq ) {
@@ -71,6 +76,7 @@ export function closestPointToPoint(
 	if ( ! target.point ) target.point = temp1.clone();
 	else target.point.copy( temp1 );
 	target.distance = closestDistance,
+	target.signedDistance = target.distance * Math.sign( solidAngle );
 	target.faceIndex = closestDistanceTriIndex;
 
 	return target;
